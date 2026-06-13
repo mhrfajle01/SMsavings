@@ -1,0 +1,77 @@
+:root {
+  --primary-color: #00C896;
+  --secondary-color: #3B82F6;
+  --accent-color: #FFD166;
+  --danger-color: #FF5A5F;
+  --bg-soft: #F8FAFC;
+  --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  --glass-bg: rgba(255, 255, 255, 0.7);
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', 'Hind Siliguri', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--bg-soft);
+  color: #1E293B;
+}
+
+.jomao-gradient-text {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.btn-jomao-primary {
+  background: linear-gradient(135deg, var(--primary-color), #00A67E);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-weight: 600;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-jomao-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 200, 150, 0.3);
+  color: white;
+}
+
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 20px;
+  box-shadow: var(--card-shadow);
+  padding: 24px;
+}
+
+.light-mode {
+  --bg-soft: #F8FAFC;
+  --glass-bg: rgba(255, 255, 255, 0.7);
+}
+
+.dark-mode {
+  --bg-soft: #0F172A;
+  --glass-bg: rgba(30, 41, 59, 0.8);
+  color: #F1F5F9;
+}
+
+/* Custom Progress Bar */
+.jomao-progress {
+  height: 8px;
+  border-radius: 4px;
+  background-color: #E2E8F0;
+  overflow: hidden;
+}
+
+.jomao-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  border-radius: 4px;
+}
