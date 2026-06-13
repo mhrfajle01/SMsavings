@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { CreditCard, Plus, Trash2, X, Filter } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
+import JomaoModal from '../components/JomaoModal';
 
 const Expenses = () => {
   const { user } = useAuth();
@@ -103,10 +104,10 @@ const Expenses = () => {
                   <CreditCard size={20} />
                 </div>
                 <div>
-                  <h6 className="fw-bold mb-0">{expense.note || expense.category}</h6>
+                  <h6 className="fw-bold mb-0 text-main">{expense.note || expense.category}</h6>
                   <div className="d-flex gap-2 align-items-center">
                     <span className="text-muted small">{new Date(expense.date).toLocaleDateString('bn-BD')}</span>
-                    <span className="badge bg-light text-dark fw-normal" style={{ fontSize: '10px' }}>{expense.category}</span>
+                    <span className="badge bg-primary bg-opacity-10 text-primary fw-normal" style={{ fontSize: '10px' }}>{expense.category}</span>
                   </div>
                 </div>
               </div>
@@ -130,48 +131,72 @@ const Expenses = () => {
         </div>
       )}
 
-      {/* Add Expense Modal */}
-      <AnimatePresence>
-        {showModal && (
-          <div className="modal-backdrop show d-flex align-items-center justify-content-center p-3" style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', zIndex: 1050 }}>
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="glass-card border-0 w-100" 
-              style={{ maxWidth: '450px' }}
-            >
-              <div className="d-flex justify-content-between align-items-center mb-4">
-                <h5 className="fw-bold mb-0">নতুন খরচ যোগ করুন</h5>
-                <button className="btn btn-link text-muted p-0" onClick={() => setShowModal(false)}><X size={24} /></button>
-              </div>
-              <form onSubmit={handleAddExpense}>
-                <div className="mb-3">
-                  <label className="form-label small fw-bold">টাকার পরিমাণ (৳)</label>
-                  <input type="number" className="form-control" placeholder="যেমন: ৫০০" required value={newExpense.amount} onChange={e => setNewExpense({...newExpense, amount: e.target.value})} />
-                </div>
-                <div className="mb-3">
-                  <label className="form-label small fw-bold">ক্যাটাগরি</label>
-                  <select className="form-select" value={newExpense.category} onChange={e => setNewExpense({...newExpense, category: e.target.value})}>
-                    {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                  </select>
-                </div>
-                <div className="mb-3">
-                  <label className="form-label small fw-bold">তারিখ</label>
-                  <input type="date" className="form-control" required value={newExpense.date} onChange={e => setNewExpense({...newExpense, date: e.target.value})} />
-                </div>
-                <div className="mb-4">
-                  <label className="form-label small fw-bold">নোট (ঐচ্ছিক)</label>
-                  <input type="text" className="form-control" placeholder="যেমন: দুপুরের খাবার" value={newExpense.note} onChange={e => setNewExpense({...newExpense, note: e.target.value})} />
-                </div>
-                <button type="submit" className="btn btn-jomao-primary w-100 py-3" disabled={isSubmitting}>
-                  {isSubmitting ? 'প্রসেসিং...' : 'খরচ সেভ করুন'}
-                </button>
-              </form>
-            </motion.div>
+      {/* REFACTORED COLORFUL MODAL */}
+      <JomaoModal 
+        isOpen={showModal} 
+        onClose={() => setShowModal(false)} 
+        title="নতুন খরচ যোগ করুন 💸"
+        color="danger"
+      >
+        <form onSubmit={handleAddExpense}>
+          <div className="mb-3">
+            <label className="form-label small fw-bold text-main">টাকার পরিমাণ (৳)</label>
+            <div className="input-group">
+              <span className="input-group-text bg-light border-2 border-end-0 text-danger fw-bold">৳</span>
+              <input 
+                type="number" 
+                className="form-control border-start-0" 
+                placeholder="যেমন: ৫০০" 
+                required 
+                value={newExpense.amount} 
+                onChange={e => setNewExpense({...newExpense, amount: e.target.value})} 
+              />
+            </div>
           </div>
-        )}
-      </AnimatePresence>
+
+          <div className="mb-3">
+            <label className="form-label small fw-bold text-main">ক্যাটাগরি</label>
+            <select 
+              className="form-select" 
+              value={newExpense.category} 
+              onChange={e => setNewExpense({...newExpense, category: e.target.value})}
+            >
+              {categories.map(cat => <option key={cat} value={cat}>{cat} 🏷️</option>)}
+            </select>
+          </div>
+
+          <div className="mb-3">
+            <label className="form-label small fw-bold text-main">তারিখ</label>
+            <input 
+              type="date" 
+              className="form-control" 
+              required 
+              value={newExpense.date} 
+              onChange={e => setNewExpense({...newExpense, date: e.target.value})} 
+            />
+          </div>
+
+          <div className="mb-4">
+            <label className="form-label small fw-bold text-main">নোট (ঐচ্ছিক)</label>
+            <input 
+              type="text" 
+              className="form-control" 
+              placeholder="যেমন: দুপুরের খাবার" 
+              value={newExpense.note} 
+              onChange={e => setNewExpense({...newExpense, note: e.target.value})} 
+            />
+          </div>
+
+          <button 
+            type="submit" 
+            className="btn btn-jomao-primary w-100 py-3 shadow-lg" 
+            style={{ background: 'linear-gradient(135deg, var(--danger-color), #B91C1C)' }} 
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'প্রসেসিং...' : 'খরচ সেভ করুন ✅'}
+          </button>
+        </form>
+      </JomaoModal>
     </div>
   );
 };

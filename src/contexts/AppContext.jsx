@@ -1,10 +1,21 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AppContext = createContext({});
 
 export const AppProvider = ({ children }) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [notifications, setNotifications] = useState([]);
+
+  useEffect(() => {
+    // Apply theme class to body for global variable support
+    if (isDarkMode) {
+      document.body.classList.add('dark-mode');
+      document.body.classList.remove('light-mode');
+    } else {
+      document.body.classList.add('light-mode');
+      document.body.classList.remove('dark-mode');
+    }
+  }, [isDarkMode]);
 
   const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
 
@@ -14,9 +25,7 @@ export const AppProvider = ({ children }) => {
 
   return (
     <AppContext.Provider value={{ isDarkMode, toggleDarkMode, notifications, addNotification }}>
-      <div className={isDarkMode ? 'dark-mode' : 'light-mode'}>
-        {children}
-      </div>
+      {children}
     </AppContext.Provider>
   );
 };

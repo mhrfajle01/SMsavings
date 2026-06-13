@@ -51,16 +51,21 @@ const Analytics = () => {
     chart: { type: 'bar', toolbar: { show: false } },
     plotOptions: { bar: { borderRadius: 8, columnWidth: '50%' } },
     colors: ['#00C896'],
-    xaxis: { categories: savingsData.map(g => g.name.substring(0, 8) + '...') },
-    grid: { borderColor: '#f1f1f1' }
+    xaxis: { 
+      categories: savingsData.map(g => g.name.substring(0, 8) + '...'),
+      labels: { style: { colors: 'var(--text-muted)' } }
+    },
+    yaxis: { labels: { style: { colors: 'var(--text-muted)' } } },
+    grid: { borderColor: 'var(--border-color)' }
   };
 
   const pieChartOptions = {
     chart: { type: 'donut' },
     colors: ['#00C896', '#3B82F6', '#FFD166', '#FF5A5F', '#8B5CF6', '#EC4899'],
     labels: expenseData.map(d => d.name),
-    legend: { position: 'bottom' },
-    plotOptions: { pie: { donut: { size: '75%' } } }
+    legend: { position: 'bottom', labels: { colors: 'var(--text-main)' } },
+    plotOptions: { pie: { donut: { size: '75%', labels: { show: true, total: { show: true, color: 'var(--text-main)' }, value: { color: 'var(--text-main)' } } } } },
+    stroke: { colors: ['var(--bg-card)'] }
   };
 
   return (

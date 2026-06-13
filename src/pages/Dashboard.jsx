@@ -88,7 +88,7 @@ const Dashboard = () => {
       </div>
 
       {/* Main Savings Card */}
-      <div className="glass-card mb-4 overflow-hidden position-relative border-0" style={{ background: 'linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%)' }}>
+      <div className="glass-card mb-4 overflow-hidden position-relative border-0 shadow-sm">
         <div className="row align-items-center">
           <div className="col-7">
             <h6 className="text-muted small fw-bold text-uppercase mb-1">মোট সঞ্চয় (Total Saved)</h6>
@@ -100,7 +100,20 @@ const Dashboard = () => {
           </div>
           <div className="col-5 text-center">
             <Chart 
-              options={chartOptions} 
+              options={{
+                ...chartOptions,
+                plotOptions: {
+                  ...chartOptions.plotOptions,
+                  radialBar: {
+                    ...chartOptions.plotOptions.radialBar,
+                    track: { background: 'var(--border-color)', strokeWidth: '97%' },
+                    dataLabels: {
+                      ...chartOptions.plotOptions.radialBar.dataLabels,
+                      value: { ...chartOptions.plotOptions.radialBar.dataLabels.value, color: 'var(--text-main)' }
+                    }
+                  }
+                }
+              }} 
               series={[Math.round(overallProgress)]} 
               type="radialBar" 
               height={180} 
@@ -153,7 +166,7 @@ const Dashboard = () => {
               </div>
               <div className="flex-grow-1">
                 <div className="d-flex justify-content-between mb-1">
-                  <h6 className="fw-bold mb-0">{goal.name}</h6>
+                  <h6 className="fw-bold mb-0 text-main">{goal.name}</h6>
                   <span className="small text-muted">{Math.round((goal.current_amount / goal.target_amount) * 100)}%</span>
                 </div>
                 <div className="jomao-progress">

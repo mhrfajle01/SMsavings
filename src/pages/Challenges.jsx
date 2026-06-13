@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Award, Zap, Star, Trophy, Clock, CheckCircle2 } from 'lucide-react';
+import { Award, Zap, Star, Trophy, Clock, CheckCircle2, PartyPopper } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
+import JomaoModal from '../components/JomaoModal';
+import confetti from 'canvas-confetti';
 
 const Challenges = () => {
   const { user, profile, fetchProfile } = useAuth();
   const [challenges, setChallenges] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  const [showRewardModal, setShowRewardModal] = useState(false);
+  const [earnedXP, setEarnedXP] = useState(0);
 
   useEffect(() => {
     fetchChallenges();
@@ -17,12 +22,10 @@ const Challenges = () => {
   const fetchChallenges = async () => {
     setLoading(true);
     try {
-      // For this demo, we'll provide some static challenges if the DB is empty
       const { data, error } = await supabase.from('challenges').select('*');
       if (data && data.length > 0) {
         setChallenges(data);
       } else {
-        // Fallback/Default Challenges
         setChallenges([
           { id: '1', title: 'প্রথম সঞ্চয়', description: 'যেকোনো একটি গোল-এ প্রথম টাকা জমা দিন।', reward_xp: 100, type: 'achievement' },
           { id: '2', title: 'মিতব্যয়ী সপ্তাহ', description: 'এক সপ্তাহে ১০০০ টাকার কম খরচ করুন।', reward_xp: 250, type: 'weekly' },
@@ -47,7 +50,15 @@ const Challenges = () => {
         .eq('id', user.id);
       
       if (error) throw error;
-      toast.success(`${xp} XP অর্জন করেছেন!`);
+      
+      setEarnedXP(xp);
+      setShowRewardModal(true);
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+      
       fetchProfile(user.id);
     } catch (error) {
       toast.error('পুরস্কার নিতে সমস্যা হচ্ছে।');
@@ -62,7 +73,7 @@ const Challenges = () => {
       </div>
 
       {/* User Progress Card */}
-      <div className="glass-card border-0 mb-4 p-4 text-center" style={{ background: 'linear-gradient(135deg, #00C896 0%, #3B82F6 100%)', color: 'white' }}>
+      <div className="glass-card border-0 mb-4 p-4 text-center shadow-lg" style={{ background: 'linear-gradient(135deg, #00C896 0%, #3B82F6 100%)', color: 'white' }}>
         <div className="d-flex justify-content-center mb-3">
           <div className="bg-white bg-opacity-20 rounded-circle p-3">
             <Trophy size={48} />
@@ -70,13 +81,13 @@ const Challenges = () => {
         </div>
         <h3 className="fw-bold mb-1">Level {profile?.level || 1}</h3>
         <p className="small opacity-90 mb-3">{profile?.xp || 0} XP অর্জিত হয়েছে</p>
-        <div className="progress bg-white bg-opacity-20" style={{ height: '10px', borderRadius: '5px' }}>
+        <div className="progress bg-white bg-opacity-20 shadow-sm" style={{ height: '12px', borderRadius: '10px' }}>
           <div 
-            className="progress-bar bg-white" 
+            className="progress-bar bg-white shadow-sm" 
             style={{ width: `${((profile?.xp || 0) % 1000) / 10}%` }} 
           />
         </div>
-        <p className="small mt-2 mb-0">পরবর্তী লেভেল এর জন্য {1000 - ((profile?.xp || 0) % 1000)} XP বাকি</p>
+        <p className="small mt-2 mb-0 fw-bold">পরবর্তী লেভেল এর জন্য {1000 - ((profile?.xp || 0) % 1000)} XP বাকি</p>
       </div>
 
       <h6 className="fw-bold mb-3">উপলব্ধ চ্যালেঞ্জসমূহ</h6>
@@ -91,20 +102,20 @@ const Challenges = () => {
             <motion.div 
               whileHover={{ scale: 1.01 }}
               key={challenge.id}
-              className="glass-card border-0 p-3 d-flex align-items-center justify-content-between"
+              className="glass-card border-0 p-3 d-flex align-items-center justify-content-between shadow-sm"
             >
               <div className="d-flex align-items-center gap-3">
-                <div className="bg-warning bg-opacity-10 text-warning rounded-circle p-2">
+                <div className="bg-warning bg-opacity-10 text-warning rounded-circle p-3">
                   {challenge.type === 'weekly' ? <Clock size={24} /> : <Zap size={24} />}
                 </div>
                 <div>
-                  <h6 className="fw-bold mb-0">{challenge.title}</h6>
+                  <h6 className="fw-bold mb-0 text-main">{challenge.title}</h6>
                   <p className="text-muted small mb-0">{challenge.description}</p>
-                  <span className="badge bg-primary bg-opacity-10 text-primary mt-1">+{challenge.reward_xp} XP</span>
+                  <span className="badge bg-primary bg-opacity-10 text-primary mt-1 fw-bold">+{challenge.reward_xp} XP</span>
                 </div>
               </div>
               <button 
-                className="btn btn-sm btn-jomao-primary"
+                className="btn btn-sm btn-jomao-primary px-3 rounded-pill"
                 onClick={() => claimReward(challenge.reward_xp)}
               >
                 পুরস্কার নিন
@@ -119,8 +130,8 @@ const Challenges = () => {
       <div className="row g-3">
         {['সঞ্চয়ী বন্ধু', 'হিসাবী রাজা', 'চ্যালেঞ্জ জয়ী'].map((badge, index) => (
           <div className="col-4 text-center" key={index}>
-            <div className="glass-card border-0 p-3 d-flex flex-column align-items-center gap-2 opacity-50">
-              <div className="bg-light rounded-circle p-3 text-muted">
+            <div className="glass-card border-0 p-3 d-flex flex-column align-items-center gap-2 opacity-50 shadow-sm">
+              <div className="bg-light rounded-circle p-3 text-muted shadow-inner">
                 <Award size={32} />
               </div>
               <span className="small fw-bold text-muted">{badge}</span>
@@ -128,6 +139,34 @@ const Challenges = () => {
           </div>
         ))}
       </div>
+
+      {/* REWARD CELEBRATION MODAL */}
+      <JomaoModal 
+        isOpen={showRewardModal} 
+        onClose={() => setShowRewardModal(false)} 
+        title="অভিনন্দন! 🎉"
+        color="warning"
+      >
+        <div className="text-center py-3">
+          <div className="d-inline-flex bg-warning bg-opacity-10 p-4 rounded-circle mb-4">
+            <PartyPopper size={64} className="text-warning" />
+          </div>
+          <h3 className="fw-bold text-main mb-2">আপনি পুরস্কার জিতেছেন!</h3>
+          <p className="text-muted mb-4">আপনি সফলভাবে এই চ্যালেঞ্জটি সম্পন্ন করেছেন এবং <span className="text-primary fw-bold">{earnedXP} XP</span> অর্জন করেছেন।</p>
+          
+          <div className="glass-card border-0 p-3 bg-light shadow-inner mb-4">
+            <h5 className="fw-bold text-primary mb-0">+{earnedXP} XP Added!</h5>
+          </div>
+
+          <button 
+            className="btn btn-jomao-primary w-100 py-3 shadow-lg"
+            style={{ background: 'linear-gradient(135deg, #FFD166, #F59E0B)' }}
+            onClick={() => setShowRewardModal(false)}
+          >
+            অসাধারণ! দারুণ! 🤩
+          </button>
+        </div>
+      </JomaoModal>
     </div>
   );
 };

@@ -44,14 +44,14 @@ const Login = () => {
 
         <form onSubmit={handleLogin}>
           <div className="mb-3">
-            <label className="form-label small fw-semibold text-secondary">ইমেইল (Email)</label>
+            <label className="form-label small fw-semibold">ইমেইল (Email)</label>
             <div className="input-group">
               <span className="input-group-text bg-transparent border-end-0 text-muted">
                 <Mail size={18} />
               </span>
               <input 
                 type="email" 
-                className="form-control bg-transparent border-start-0 ps-0" 
+                className="form-control border-start-0 ps-0" 
                 placeholder="example@mail.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -61,14 +61,14 @@ const Login = () => {
           </div>
 
           <div className="mb-4">
-            <label className="form-label small fw-semibold text-secondary">পাসওয়ার্ড (Password)</label>
+            <label className="form-label small fw-semibold">পাসওয়ার্ড (Password)</label>
             <div className="input-group">
               <span className="input-group-text bg-transparent border-end-0 text-muted">
                 <Lock size={18} />
               </span>
               <input 
                 type="password" 
-                className="form-control bg-transparent border-start-0 ps-0" 
+                className="form-control border-start-0 ps-0" 
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
