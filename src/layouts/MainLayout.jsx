@@ -32,18 +32,20 @@ const MainLayout = ({ children }) => {
     <div className="min-vh-100 d-flex flex-column">
       {/* Global Announcement */}
       {announcement && (
-        <div className="bg-primary text-white py-2 px-3 overflow-hidden position-relative" style={{ minHeight: '40px' }}>
+        <div className="bg-primary overflow-hidden position-relative shadow-sm" style={{ height: '36px', background: 'linear-gradient(90deg, var(--primary-color), var(--secondary-color))' }}>
           <motion.div 
             initial={{ x: '100%' }}
             animate={{ x: '-100%' }}
             transition={{ 
               repeat: Infinity, 
-              duration: 20, 
+              duration: 30, 
               ease: "linear" 
             }}
-            className="text-nowrap small fw-bold d-flex align-items-center gap-2"
+            className="text-nowrap text-white small fw-bold d-flex align-items-center h-100"
           >
-            <Bell size={14} /> {announcement} • {announcement} • {announcement}
+            <span className="mx-4 d-flex align-items-center gap-2">
+              <Bell size={14} className="opacity-75" /> {announcement}
+            </span>
           </motion.div>
         </div>
       )}
