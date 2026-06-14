@@ -123,6 +123,18 @@ body {
   font-size: 12px;
   font-weight: bold;
   display: inline-flex;
-  align-items: center;
+  align-items-center;
   gap: 4px;
 }
+
+/* Premium Dashboard Card Themes */
+.theme-default .premium-dashboard-card { background: linear-gradient(135deg, #00C896, #3B82F6); }
+.theme-lvl2 .premium-dashboard-card { background: linear-gradient(135deg, #78909C, #546E7A); } /* Vibrant Slate */
+.theme-lvl3 .premium-dashboard-card { background: linear-gradient(135deg, #10B981, #059669); } /* Vivid Emerald */
+.theme-lvl4 .premium-dashboard-card { background: linear-gradient(135deg, #3B82F6, #2563EB); } /* Electric Blue */
+.theme-lvl5 .premium-dashboard-card { background: linear-gradient(135deg, #FBBF24, #D97706); } /* Radiant Gold */
+.theme-lvl6 .premium-dashboard-card { background: linear-gradient(135deg, #8B5CF6, #7C3AED); } /* Royal Purple */
+.theme-lvl7 .premium-dashboard-card { background: linear-gradient(135deg, #F472B6, #DB2777); } /* Hot Crimson */
+
+
+

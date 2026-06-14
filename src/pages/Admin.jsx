@@ -244,19 +244,27 @@ const AdminVault = () => {
               <input 
                 type={showPwd ? "text" : "password"} 
                 className="form-control text-center py-3 rounded-4 shadow-sm border-2" 
-                placeholder="Master Password"
+                placeholder="Enter Master Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoFocus
-                style={{ fontSize: '18px', letterSpacing: showPwd ? '0' : '4px' }}
+                style={{ 
+                  fontSize: '16px', 
+                  letterSpacing: showPwd ? '0' : '2px',
+                  paddingLeft: '45px',
+                  paddingRight: '45px'
+                }}
               />
-              <button 
-                type="button"
-                className="btn position-absolute end-0 top-50 translate-middle-y text-muted border-0 shadow-none"
-                onClick={() => setShowPwd(!showPwd)}
-              >
-                {showPwd ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
+              {password.length > 0 && (
+                <button 
+                  type="button"
+                  className="btn position-absolute end-0 top-50 translate-middle-y text-muted border-0 shadow-none me-2"
+                  onClick={() => setShowPwd(!showPwd)}
+                  style={{ zIndex: 10, width: '40px' }}
+                >
+                  {showPwd ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              )}
             </div>
             <button className="btn btn-jomao-primary w-100 py-3 rounded-4 shadow-lg d-flex align-items-center justify-content-center gap-2">
               <Unlock size={20} /> Unlock Vault

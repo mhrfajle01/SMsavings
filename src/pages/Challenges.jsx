@@ -173,21 +173,57 @@ const Challenges = () => {
     return uc?.status || 'not_started';
   };
 
+  // Dynamic Theme Logic
+  const getThemeClass = (lvl) => {
+    if (lvl >= 7) return 'theme-lvl7';
+    if (lvl >= 6) return 'theme-lvl6';
+    if (lvl >= 5) return 'theme-lvl5';
+    if (lvl >= 4) return 'theme-lvl4';
+    if (lvl >= 3) return 'theme-lvl3';
+    if (lvl >= 2) return 'theme-lvl2';
+    return 'theme-default';
+  };
+
+  const getNextThemeHint = (lvl) => {
+    if (lvl < 2) return "Next: Level 2 Slate Vibe";
+    if (lvl < 3) return "Next: Level 3 Emerald Vibe";
+    if (lvl < 4) return "Next: Level 4 Blue Vibe";
+    if (lvl < 5) return "Next: Level 5 Gold Vibe";
+    if (lvl < 6) return "Next: Level 6 Purple Vibe";
+    if (lvl < 7) return "Next: Level 7 Crimson Vibe";
+    return "Legendary Level Reached!";
+  };
+
   return (
-    <div className="challenges-page">
+    <div className={`challenges-page ${getThemeClass(level)}`}>
       <div className="mb-4">
         <h4 className="fw-bold mb-0">চ্যালেঞ্জ ও পুরস্কার (Challenges)</h4>
         <p className="text-muted small">সঞ্চয় করুন, লেভেল আপ করুন!</p>
       </div>
 
       {/* User Progress Card */}
-      <div className="glass-card border-0 mb-4 p-4 text-center shadow-lg" style={{ background: 'linear-gradient(135deg, #00C896 0%, #3B82F6 100%)', color: 'white' }}>
+      <motion.div 
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="premium-dashboard-card border-0 mb-4 p-4 text-center shadow-lg text-white" 
+        style={{ borderRadius: '24px', position: 'relative', overflow: 'hidden' }}
+      >
         <div className="d-flex justify-content-center mb-3">
-          <div className="bg-white bg-opacity-20 rounded-circle p-3">
+          <motion.div 
+            whileHover={{ rotate: 360 }}
+            transition={{ duration: 1 }}
+            className="bg-white bg-opacity-20 rounded-circle p-3"
+          >
             <Trophy size={48} />
-          </div>
+          </motion.div>
         </div>
-        <h3 className="fw-bold mb-1">Level {level}</h3>
+        <motion.h3 
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="fw-bold mb-1"
+        >
+          Level {level}
+        </motion.h3>
         <p className="small opacity-90 mb-3">{profile?.xp || 0} XP অর্জিত হয়েছে</p>
         <div className="progress bg-white bg-opacity-20 shadow-sm" style={{ height: '14px', borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.3)' }}>
           <motion.div 
@@ -199,11 +235,15 @@ const Challenges = () => {
             style={{ minWidth: '2px' }}
           />
         </div>
-        <div className="d-flex justify-content-between mt-2 small fw-bold opacity-90">
+        <motion.div 
+          animate={{ opacity: [0.7, 1, 0.7] }}
+          transition={{ repeat: Infinity, duration: 2 }}
+          className="d-flex justify-content-between mt-3 small fw-bold"
+        >
           <span>{xpInCurrentLevel} XP</span>
-          <span>{xpRemaining} XP to Level {level + 1}</span>
-        </div>
-      </div>
+          <span>{getNextThemeHint(level)}</span>
+        </motion.div>
+      </motion.div>
 
       <h6 className="fw-bold mb-3 d-flex align-items-center gap-2">
         <Star size={18} className="text-warning" /> উপলব্ধ চ্যালেঞ্জসমূহ (Available Tasks)

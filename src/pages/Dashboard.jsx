@@ -14,8 +14,6 @@ const Dashboard = () => {
   const [monthlyExpense, setMonthlyExpense] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  const { level, progress } = calculateLevel(profile?.xp || 0);
-
   useEffect(() => {
     fetchDashboardData();
   }, [user]);
@@ -78,18 +76,48 @@ const Dashboard = () => {
     ? (goals.reduce((acc, g) => acc + (g.current_amount / g.target_amount), 0) / goals.length) * 100
     : 0;
 
+  const { level, progress } = calculateLevel(profile?.xp || 0);
+
+  // Dynamic Theme Logic
+  const getThemeClass = (lvl) => {
+    if (lvl >= 6) return 'theme-lvl6';
+    if (lvl >= 5) return 'theme-lvl5';
+    if (lvl >= 4) return 'theme-lvl4';
+    if (lvl >= 3) return 'theme-lvl3';
+    if (lvl >= 2) return 'theme-lvl2';
+    return 'theme-default';
+  };
+
+  const getNextThemeHint = (lvl) => {
+    if (lvl < 2) return "Level 2: Slate Theme";
+    if (lvl < 3) return "Level 3: Emerald Theme";
+    if (lvl < 4) return "Level 4: Blue Theme";
+    if (lvl < 5) return "Level 5: Gold Theme";
+    if (lvl < 6) return "Level 6: Purple Theme";
+    return "Max Level Reached!";
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0 }} 
       animate={{ opacity: 1 }}
-      className="dashboard-container"
+      className={`dashboard-container ${getThemeClass(level)}`}
     >
       {/* Welcome Header */}
       <div className="mb-4 d-flex justify-content-between align-items-center">
-        <div>
+        <motion.div
+          initial={{ x: -20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+        >
           <h4 className="fw-bold mb-0">আসসালামু আলাইকুম, {profile?.full_name?.split(' ')[0] || 'বন্ধু'}! 👋</h4>
           <div className="d-flex align-items-center gap-2 mt-1">
-            <span className="badge bg-warning text-dark fw-bold" style={{ fontSize: '10px' }}>LEVEL {level}</span>
+            <motion.span 
+              whileHover={{ scale: 1.1 }}
+              className={`badge bg-primary text-white fw-bold`} 
+              style={{ fontSize: '10px' }}
+            >
+              LEVEL {level}
+            </motion.span>
             <div className="jomao-progress" style={{ width: '100px', height: '6px', overflow: 'hidden' }}>
               <motion.div 
                 key={`${level}-${profile?.xp}`}
@@ -100,14 +128,17 @@ const Dashboard = () => {
               />
             </div>
           </div>
+          <p className="text-muted mt-2 mb-0" style={{ fontSize: '10px' }}>
+             {getNextThemeHint(level)}
+          </p>
+        </motion.div>
+          {profile?.streak > 0 && (
+            <div className="streak-badge">
+              <Flame size={14} fill="currentColor" />
+              {profile.streak}
+            </div>
+          )}
         </div>
-        {profile?.streak > 0 && (
-          <div className="streak-badge">
-            <Flame size={14} fill="currentColor" />
-            {profile.streak}
-          </div>
-        )}
-      </div>
 
       {/* Main Savings Card */}
       <div className="glass-card mb-4 overflow-hidden position-relative border-0 shadow-sm">
