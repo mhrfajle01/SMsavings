@@ -94,3 +94,35 @@ body {
   background-color: rgba(0, 0, 0, 0.85) !important;
   backdrop-filter: none !important;
 }
+
+/* Progress Bars */
+.jomao-progress {
+  height: 8px;
+  background-color: var(--border-color);
+  border-radius: 10px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.jomao-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  border-radius: 10px;
+  transition: width 0.5s ease-out;
+}
+
+.xp-progress {
+  background: linear-gradient(90deg, #FFD166, #F59E0B);
+}
+
+.streak-badge {
+  background: linear-gradient(135deg, #FF4B2B, #FF416C);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}

@@ -26,7 +26,14 @@ const Signup = () => {
           },
         },
       });
-      if (error) throw error;
+      if (error) {
+        if (error.message.includes('rate limit')) {
+          toast.error('ইমেইল লিমিট শেষ! দয়া করে ১ ঘণ্টা পর চেষ্টা করুন অথবা অন্য ইমেইল ব্যবহার করুন।', { duration: 6000 });
+        } else {
+          throw error;
+        }
+        return;
+      }
       toast.success('অ্যাকাউন্ট তৈরি হয়েছে! ইমেইল ভেরিফাই করুন।');
       navigate('/login');
     } catch (error) {

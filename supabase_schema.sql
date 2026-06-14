@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   level INTEGER DEFAULT 1,
   streak INTEGER DEFAULT 0,
   last_streak_date DATE,
+  streak_freeze_count INTEGER DEFAULT 0,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -128,3 +129,13 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+-- 8. Admin Configuration Table
+CREATE TABLE IF NOT EXISTS admin_config (
+  key TEXT PRIMARY KEY,
+  value TEXT,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Seed initial master password (default: jomao-master-2026)
+INSERT INTO admin_config (key, value) VALUES ('master_password', 'jomao-master-2026') ON CONFLICT DO NOTHING;

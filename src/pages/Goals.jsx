@@ -8,7 +8,7 @@ import confetti from 'canvas-confetti';
 import JomaoModal from '../components/JomaoModal';
 
 const Goals = () => {
-  const { user } = useAuth();
+  const { user, addXP } = useAuth();
   const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -55,6 +55,7 @@ const Goals = () => {
       const { error } = await supabase.from('goals').insert([goalData]);
       if (error) throw error;
       toast.success('নতুন লক্ষ্য যোগ করা হয়েছে!');
+      addXP(10); // Reward for setting a goal
       setShowModal(false);
       setNewGoal({ name: '', target_amount: '', category: 'General', deadline: '' });
       fetchGoals();
@@ -93,8 +94,10 @@ const Goals = () => {
           colors: ['#00C896', '#3B82F6', '#FFD166']
         });
         toast.success('অভিনন্দন! আপনি লক্ষ্য পূরণ করেছেন! 🎉');
+        addXP(100); // Reward for completing a goal
       } else {
         toast.success('সঞ্চয় সফল হয়েছে!');
+        addXP(20); // Reward for saving
       }
       fetchGoals();
     } catch (error) {

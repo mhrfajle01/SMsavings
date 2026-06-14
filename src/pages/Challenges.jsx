@@ -6,32 +6,30 @@ import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import JomaoModal from '../components/JomaoModal';
 import confetti from 'canvas-confetti';
+import { calculateLevel } from '../utils/gamification';
 
 const Challenges = () => {
-  const { user, profile, fetchProfile } = useAuth();
+  const { user, profile, fetchProfile, addXP } = useAuth();
   const [challenges, setChallenges] = useState([]);
+  const [userChallenges, setUserChallenges] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [checking, setChecking] = useState({});
   
   const [showRewardModal, setShowRewardModal] = useState(false);
   const [earnedXP, setEarnedXP] = useState(0);
 
+  const { level, progress, xpInCurrentLevel, xpNeededForNextLevel, xpRemaining } = calculateLevel(profile?.xp || 0);
+
   useEffect(() => {
-    fetchChallenges();
+    if (user) {
+      fetchData();
+    }
   }, [user]);
 
-  const fetchChallenges = async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.from('challenges').select('*');
-      if (data && data.length > 0) {
-        setChallenges(data);
-      } else {
-        setChallenges([
-          { id: '1', title: 'প্রথম সঞ্চয়', description: 'যেকোনো একটি গোল-এ প্রথম টাকা জমা দিন।', reward_xp: 100, type: 'achievement' },
-          { id: '2', title: 'মিতব্যয়ী সপ্তাহ', description: 'এক সপ্তাহে ১০০০ টাকার কম খরচ করুন।', reward_xp: 250, type: 'weekly' },
-          { id: '3', title: 'স্ট্রিক মাস্টার', description: 'টানা ৭ দিন খরচ বা সঞ্চয়ের হিসাব রাখুন।', reward_xp: 500, type: 'achievement' },
-        ]);
-      }
+      await Promise.all([fetchChallenges(), fetchUserChallenges()]);
     } catch (error) {
       console.error(error);
     } finally {
@@ -39,30 +37,140 @@ const Challenges = () => {
     }
   };
 
-  const claimReward = async (xp) => {
+  const fetchChallenges = async () => {
     try {
-      const newXp = (profile?.xp || 0) + xp;
-      const newLevel = Math.floor(newXp / 1000) + 1;
-      
-      const { error } = await supabase
-        .from('profiles')
-        .update({ xp: newXp, level: newLevel })
-        .eq('id', user.id);
-      
-      if (error) throw error;
-      
-      setEarnedXP(xp);
-      setShowRewardModal(true);
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 }
-      });
-      
-      fetchProfile(user.id);
+      const { data, error } = await supabase.from('challenges').select('*');
+      if (data && data.length > 0) {
+        setChallenges(data);
+      } else {
+        // Fallback challenges with valid UUID format
+        const defaultChallenges = [
+          { id: 'c1111111-1111-1111-1111-111111111111', title: 'প্রথম সঞ্চয়', description: 'যেকোনো একটি গোল-এ প্রথম টাকা জমা দিন।', reward_xp: 100, type: 'achievement', requirement: 'first_saving' },
+          { id: 'c2222222-2222-2222-2222-222222222222', title: 'মিতব্যয়ী সপ্তাহ', description: 'এক সপ্তাহে ১০০০ টাকার কম খরচ করুন।', reward_xp: 250, type: 'weekly', requirement: 'low_spending' },
+          { id: 'c3333333-3333-3333-3333-333333333333', title: 'স্ট্রিক মাস্টার', description: 'টানা ৭ দিন খরচ বা সঞ্চয়ের হিসাব রাখুন।', reward_xp: 500, type: 'achievement', requirement: 'streak_7' },
+        ];
+        setChallenges(defaultChallenges);
+      }
     } catch (error) {
-      toast.error('পুরস্কার নিতে সমস্যা হচ্ছে।');
+      console.error('Fetch challenges error:', error);
     }
+  };
+
+  const fetchUserChallenges = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_challenges')
+        .select('*')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      setUserChallenges(data || []);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const checkEligibility = async (challenge) => {
+    if (!user) return false;
+    
+    // Check if already claimed
+    if (userChallenges.find(uc => uc.challenge_id === challenge.id && uc.status === 'completed')) {
+      return 'claimed';
+    }
+
+    try {
+      if (challenge.requirement === 'first_saving') {
+        const { data, count } = await supabase
+          .from('goals')
+          .select('current_amount', { count: 'exact' })
+          .eq('user_id', user.id)
+          .gt('current_amount', 0);
+        
+        return count > 0;
+      }
+      
+      if (challenge.requirement === 'low_spending') {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const { data } = await supabase
+          .from('expenses')
+          .select('amount')
+          .eq('user_id', user.id)
+          .gte('date', sevenDaysAgo.toISOString().split('T')[0]);
+        
+        const total = data?.reduce((acc, exp) => acc + Number(exp.amount), 0) || 0;
+        // User passes if total spending in last 7 days is < 1000
+        return total < 1000;
+      }
+      
+      if (challenge.requirement === 'streak_7') {
+        return (profile?.streak || 0) >= 7;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Eligibility check failed:', error);
+      return false;
+    }
+  };
+
+  const handleClaim = async (challenge) => {
+    setChecking(prev => ({ ...prev, [challenge.id]: true }));
+    
+    try {
+      const isEligible = await checkEligibility(challenge);
+      
+      if (isEligible === 'claimed') {
+        toast.error('আপনি ইতিমধ্যে এই পুরস্কারটি নিয়েছেন!');
+        setChecking(prev => ({ ...prev, [challenge.id]: false }));
+        return;
+      }
+
+      if (!isEligible) {
+        toast.error('চ্যালেঞ্জটি এখনো সম্পন্ন হয়নি। শর্তগুলো পূরণ করুন।');
+        setChecking(prev => ({ ...prev, [challenge.id]: false }));
+        return;
+      }
+
+      // Record the claim in DB first
+      const { error: claimError } = await supabase
+        .from('user_challenges')
+        .insert([{
+          user_id: user.id,
+          challenge_id: challenge.id,
+          status: 'completed'
+        }]);
+      
+      if (claimError) {
+        console.warn('Could not record claim in DB:', claimError.message);
+        // We continue anyway so the user gets XP even if DB seeding is incomplete
+      }
+
+      // Add XP
+      const success = await addXP(challenge.reward_xp);
+      if (success) {
+        setEarnedXP(challenge.reward_xp);
+        setShowRewardModal(true);
+        confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#00C896', '#3B82F6', '#FFD166']
+        });
+        await fetchUserChallenges();
+      } else {
+        toast.error('XP যোগ করতে সমস্যা হয়েছে।');
+      }
+    } catch (error) {
+      console.error('Claim error:', error);
+      toast.error('পুরস্কার নিতে সমস্যা হচ্ছে। পরে আবার চেষ্টা করুন।');
+    } finally {
+      setChecking(prev => ({ ...prev, [challenge.id]: false }));
+    }
+  };
+
+  const getStatus = (challengeId) => {
+    const uc = userChallenges.find(u => u.challenge_id === challengeId);
+    return uc?.status || 'not_started';
   };
 
   return (
@@ -79,18 +187,27 @@ const Challenges = () => {
             <Trophy size={48} />
           </div>
         </div>
-        <h3 className="fw-bold mb-1">Level {profile?.level || 1}</h3>
+        <h3 className="fw-bold mb-1">Level {level}</h3>
         <p className="small opacity-90 mb-3">{profile?.xp || 0} XP অর্জিত হয়েছে</p>
-        <div className="progress bg-white bg-opacity-20 shadow-sm" style={{ height: '12px', borderRadius: '10px' }}>
-          <div 
-            className="progress-bar bg-white shadow-sm" 
-            style={{ width: `${((profile?.xp || 0) % 1000) / 10}%` }} 
+        <div className="progress bg-white bg-opacity-20 shadow-sm" style={{ height: '14px', borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.3)' }}>
+          <motion.div 
+            key={`${level}-${profile?.xp}`}
+            initial={{ width: 0 }}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 1.5, ease: "circOut" }}
+            className="progress-bar bg-white shadow-sm h-100" 
+            style={{ minWidth: '2px' }}
           />
         </div>
-        <p className="small mt-2 mb-0 fw-bold">পরবর্তী লেভেল এর জন্য {1000 - ((profile?.xp || 0) % 1000)} XP বাকি</p>
+        <div className="d-flex justify-content-between mt-2 small fw-bold opacity-90">
+          <span>{xpInCurrentLevel} XP</span>
+          <span>{xpRemaining} XP to Level {level + 1}</span>
+        </div>
       </div>
 
-      <h6 className="fw-bold mb-3">উপলব্ধ চ্যালেঞ্জসমূহ</h6>
+      <h6 className="fw-bold mb-3 d-flex align-items-center gap-2">
+        <Star size={18} className="text-warning" /> উপলব্ধ চ্যালেঞ্জসমূহ (Available Tasks)
+      </h6>
       
       {loading ? (
         <div className="text-center py-4">
@@ -98,30 +215,41 @@ const Challenges = () => {
         </div>
       ) : (
         <div className="d-flex flex-column gap-3">
-          {challenges.map((challenge) => (
-            <motion.div 
-              whileHover={{ scale: 1.01 }}
-              key={challenge.id}
-              className="glass-card border-0 p-3 d-flex align-items-center justify-content-between shadow-sm"
-            >
-              <div className="d-flex align-items-center gap-3">
-                <div className="bg-warning bg-opacity-10 text-warning rounded-circle p-3">
-                  {challenge.type === 'weekly' ? <Clock size={24} /> : <Zap size={24} />}
-                </div>
-                <div>
-                  <h6 className="fw-bold mb-0 text-main">{challenge.title}</h6>
-                  <p className="text-muted small mb-0">{challenge.description}</p>
-                  <span className="badge bg-primary bg-opacity-10 text-primary mt-1 fw-bold">+{challenge.reward_xp} XP</span>
-                </div>
-              </div>
-              <button 
-                className="btn btn-sm btn-jomao-primary px-3 rounded-pill"
-                onClick={() => claimReward(challenge.reward_xp)}
+          {challenges.map((challenge) => {
+            const status = getStatus(challenge.id);
+            const isClaimed = status === 'completed';
+
+            return (
+              <motion.div 
+                whileHover={{ scale: 1.01 }}
+                key={challenge.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`glass-card border-0 p-3 d-flex align-items-center justify-content-between shadow-sm ${isClaimed ? 'opacity-75' : ''}`}
               >
-                পুরস্কার নিন
-              </button>
-            </motion.div>
-          ))}
+                <div className="d-flex align-items-center gap-3">
+                  <div className={`rounded-circle p-3 ${isClaimed ? 'bg-success bg-opacity-10 text-success' : 'bg-warning bg-opacity-10 text-warning'}`}>
+                    {isClaimed ? <CheckCircle2 size={24} /> : (challenge.type === 'weekly' ? <Clock size={24} /> : <Zap size={24} />)}
+                  </div>
+                  <div className="flex-grow-1">
+                    <h6 className={`fw-bold mb-0 ${isClaimed ? 'text-success' : 'text-main'}`}>
+                      {challenge.title} {isClaimed && '✅'}
+                    </h6>
+                    <p className="text-muted small mb-0">{challenge.description}</p>
+                    <span className="badge bg-primary bg-opacity-10 text-primary mt-1 fw-bold">+{challenge.reward_xp} XP</span>
+                  </div>
+                </div>
+                <button 
+                  className={`btn btn-sm px-3 rounded-pill fw-bold ${isClaimed ? 'btn-outline-success' : 'btn-jomao-primary'}`}
+                  onClick={() => !isClaimed && handleClaim(challenge)}
+                  disabled={checking[challenge.id] || isClaimed}
+                  style={{ minWidth: '100px' }}
+                >
+                  {checking[challenge.id] ? 'চেকিং...' : (isClaimed ? 'সংগৃহীত' : 'পুরস্কার নিন')}
+                </button>
+              </motion.div>
+            );
+          })}
         </div>
       )}
 

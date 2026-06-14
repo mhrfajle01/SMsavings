@@ -1,16 +1,32 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, Mail, LogOut, Settings, Shield, Bell, Moon, Sun, ChevronRight, DollarSign } from 'lucide-react';
+import { User, Mail, LogOut, Settings, Shield, Bell, Moon, Sun, ChevronRight, DollarSign, Snowflake, Trash2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useAppContext } from '../contexts/AppContext';
 import { supabase } from '../services/supabase';
 import toast from 'react-hot-toast';
 import JomaoModal from '../components/JomaoModal';
+import { calculateLevel, STREAK_FREEZE_COST } from '../utils/gamification';
+import { useNavigate } from 'react-router-dom';
 
 const Profile = () => {
-  const { user, profile, signOut, fetchProfile } = useAuth();
+  const { user, profile, signOut, fetchProfile, buyStreakFreeze } = useAuth();
   const { isDarkMode, toggleDarkMode } = useAppContext();
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const [secretClicks, setSecretClicks] = useState(0);
+
+  const { level, progress, xpInCurrentLevel, xpNeededForNextLevel, xpRemaining } = calculateLevel(profile?.xp || 0);
+
+  const handleSecretEntrance = () => {
+    const newCount = secretClicks + 1;
+    setSecretClicks(newCount);
+    if (newCount === 3) toast('You are finding something secret...');
+    if (newCount >= 5) {
+      toast.success('Entering Master Vault...');
+      navigate('/admin-vault');
+    }
+  };
   
   const [showEditModal, setShowEditModal] = useState(false);
   const [editData, setEditData] = useState({
@@ -79,7 +95,7 @@ const Profile = () => {
       <div className="row g-3 mb-4">
         <div className="col-4">
           <div className="glass-card border-0 p-2 text-center shadow-sm">
-            <h6 className="fw-bold text-primary mb-0">{profile?.level || 1}</h6>
+            <h6 className="fw-bold text-primary mb-0">{level}</h6>
             <span className="text-muted" style={{ fontSize: '10px' }}>লেভেল</span>
           </div>
         </div>
@@ -95,6 +111,51 @@ const Profile = () => {
             <span className="text-muted" style={{ fontSize: '10px' }}>স্ট্রিক</span>
           </div>
         </div>
+      </div>
+
+      {/* XP Progress Detail */}
+      <div className="glass-card border-0 p-3 mb-4 shadow-sm">
+        <div className="d-flex justify-content-between mb-2">
+          <h6 className="fw-bold mb-0" style={{ fontSize: '12px' }}>লেভেল প্রোগ্রেস</h6>
+          <span className="text-muted" style={{ fontSize: '11px' }}>{xpInCurrentLevel} / {xpNeededForNextLevel} XP</span>
+        </div>
+        <div className="jomao-progress" style={{ height: '10px' }}>
+          <div className="jomao-progress-bar xp-progress" style={{ width: `${progress}%` }} />
+        </div>
+        <p className="text-muted mt-2 mb-0" style={{ fontSize: '10px' }}>
+          পরবর্তী লেভেলে যেতে আর {xpRemaining} XP লাগবে
+        </p>
+      </div>
+
+      {/* Gamification Shop */}
+      <div className="mb-4">
+        <h6 className="fw-bold px-1 mb-2">গ্যামিফিকেশন শপ (Shop) 🛒</h6>
+        <motion.div 
+          whileHover={{ scale: 1.01 }}
+          className="glass-card border-0 p-3 d-flex align-items-center justify-content-between shadow-sm"
+        >
+          <div className="d-flex align-items-center gap-3">
+            <div className="bg-info bg-opacity-10 p-2 rounded-circle text-info">
+              <Snowflake size={24} />
+            </div>
+            <div>
+              <h6 className="fw-bold mb-0">Streak Freeze (স্ট্রিক ফ্রিজ)</h6>
+              <span className="text-muted small">একদিন স্ট্রিক রক্ষা করুন ({STREAK_FREEZE_COST} XP)</span>
+            </div>
+          </div>
+          <button 
+            className="btn btn-sm btn-jomao-primary px-3 py-2"
+            onClick={buyStreakFreeze}
+            style={{ borderRadius: '10px' }}
+          >
+            কিনুন
+          </button>
+        </motion.div>
+        {profile?.streak_freeze_count > 0 && (
+          <p className="text-info mt-2 px-1 fw-bold" style={{ fontSize: '11px' }}>
+            আপনার কাছে বর্তমানে {profile.streak_freeze_count}টি ফ্রিজ আছে ❄️
+          </p>
+        )}
       </div>
 
       {/* Settings List */}
@@ -145,6 +206,42 @@ const Profile = () => {
           subtitle="পাসওয়ার্ড পরিবর্তন করুন" 
           onClick={() => toast('শীঘ্রই আসছে!')}
         />
+
+        <SettingItem 
+          icon={<Trash2 size={20} className="text-danger" />} 
+          title="ফ্যাক্টরি রিসেট" 
+          subtitle="সব ডেটা মুছে নতুন করে শুরু করুন" 
+          onClick={async () => {
+            if (!window.confirm('সতর্কতা: আপনার সমস্ত সঞ্চয়, খরচ এবং লক্ষ্য মুছে ফেলা হবে। আপনি কি নিশ্চিত?')) return;
+            setLoading(true);
+            try {
+              // Delete user data
+              await supabase.from('goals').delete().eq('user_id', user.id);
+              await supabase.from('expenses').delete().eq('user_id', user.id);
+              await supabase.from('savings_logs').delete().eq('user_id', user.id);
+              await supabase.from('user_challenges').delete().eq('user_id', user.id);
+              
+              // Reset profile
+              await supabase.from('profiles').update({
+                xp: 0,
+                level: 1,
+                streak: 0,
+                streak_freeze_count: 0,
+                last_streak_date: null
+              }).eq('id', user.id);
+              
+              toast.success('ফ্যাক্টরি রিসেট সম্পন্ন হয়েছে! 🎉');
+              
+              // Force logout and redirect to clean the state
+              await signOut();
+              navigate('/login');
+            } catch (error) {
+              toast.error('রিসেট করতে ব্যর্থ হয়েছে।');
+            } finally {
+              setLoading(false);
+            }
+          }}
+        />
       </div>
 
       <button 
@@ -156,8 +253,8 @@ const Profile = () => {
         লগআউট করুন
       </button>
 
-      <div className="text-center mt-4">
-        <p className="text-muted" style={{ fontSize: '10px' }}>Jomao App Version 1.0.0 (Production)</p>
+      <div className="text-center mt-4 cursor-pointer" onClick={handleSecretEntrance}>
+        <p className="text-muted" style={{ fontSize: '10px' }}>Jomao App Version 1.2.0 (Stable)</p>
       </div>
 
       {/* EDIT PROFILE MODAL */}

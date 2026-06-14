@@ -1,13 +1,53 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Target, CreditCard, Award, BarChart3, User, LogOut } from 'lucide-react';
+import { Home, Target, CreditCard, Award, BarChart3, User, LogOut, Bell } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../services/supabase';
+import { calculateLevel } from '../utils/gamification';
 
 const MainLayout = ({ children }) => {
   const { signOut, profile } = useAuth();
+  const [announcement, setAnnouncement] = useState('');
+  const { level } = calculateLevel(profile?.xp || 0);
+
+  useEffect(() => {
+    fetchAnnouncement();
+  }, []);
+
+  const fetchAnnouncement = async () => {
+    try {
+      const { data } = await supabase
+        .from('admin_config')
+        .select('value')
+        .eq('key', 'global_announcement')
+        .single();
+      if (data && data.value) setAnnouncement(data.value);
+    } catch (e) {
+      // Silence config errors
+    }
+  };
 
   return (
     <div className="min-vh-100 d-flex flex-column">
+      {/* Global Announcement */}
+      {announcement && (
+        <div className="bg-primary text-white py-2 px-3 overflow-hidden position-relative" style={{ minHeight: '40px' }}>
+          <motion.div 
+            initial={{ x: '100%' }}
+            animate={{ x: '-100%' }}
+            transition={{ 
+              repeat: Infinity, 
+              duration: 20, 
+              ease: "linear" 
+            }}
+            className="text-nowrap small fw-bold d-flex align-items-center gap-2"
+          >
+            <Bell size={14} /> {announcement} • {announcement} • {announcement}
+          </motion.div>
+        </div>
+      )}
+      
       {/* Top Navbar */}
       <nav className="navbar glass-card sticky-top m-2 py-2 px-3 border-0 rounded-4">
         <div className="container-fluid d-flex justify-content-between align-items-center">
@@ -18,7 +58,7 @@ const MainLayout = ({ children }) => {
           <div className="d-flex align-items-center gap-3">
             <div className="text-end d-none d-sm-block">
               <p className="m-0 small fw-bold text-dark">{profile?.full_name || 'ব্যবহারকারী'}</p>
-              <p className="m-0 text-muted" style={{ fontSize: '10px' }}>Level {profile?.level || 1} • {profile?.xp || 0} XP</p>
+              <p className="m-0 text-muted" style={{ fontSize: '10px' }}>Level {level} • {profile?.xp || 0} XP</p>
             </div>
             <NavLink 
               to="/profile"

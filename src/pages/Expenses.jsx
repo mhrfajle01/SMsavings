@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import JomaoModal from '../components/JomaoModal';
 
 const Expenses = () => {
-  const { user } = useAuth();
+  const { user, addXP } = useAuth();
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -46,6 +46,7 @@ const Expenses = () => {
       }]);
       if (error) throw error;
       toast.success('খরচ যোগ করা হয়েছে!');
+      addXP(5); // Consistency reward for logging expense
       setShowModal(false);
       setNewExpense({ amount: '', category: 'Food', note: '', date: new Date().toISOString().split('T')[0] });
       fetchExpenses();

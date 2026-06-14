@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Target, TrendingUp, CreditCard, Award, ChevronRight, Plus } from 'lucide-react';
+import { Target, TrendingUp, CreditCard, Award, ChevronRight, Plus, Flame } from 'lucide-react';
 import Chart from 'react-apexcharts';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
+import { calculateLevel } from '../utils/gamification';
 
 const Dashboard = () => {
   const { user, profile } = useAuth();
@@ -12,6 +13,8 @@ const Dashboard = () => {
   const [totalSaved, setTotalSaved] = useState(0);
   const [monthlyExpense, setMonthlyExpense] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  const { level, progress } = calculateLevel(profile?.xp || 0);
 
   useEffect(() => {
     fetchDashboardData();
@@ -82,9 +85,28 @@ const Dashboard = () => {
       className="dashboard-container"
     >
       {/* Welcome Header */}
-      <div className="mb-4">
-        <h4 className="fw-bold mb-0">আসসালামু আলাইকুম, {profile?.full_name?.split(' ')[0] || 'বন্ধু'}! 👋</h4>
-        <p className="text-muted small">আজকে আপনার সঞ্চয়ের কি খবর?</p>
+      <div className="mb-4 d-flex justify-content-between align-items-center">
+        <div>
+          <h4 className="fw-bold mb-0">আসসালামু আলাইকুম, {profile?.full_name?.split(' ')[0] || 'বন্ধু'}! 👋</h4>
+          <div className="d-flex align-items-center gap-2 mt-1">
+            <span className="badge bg-warning text-dark fw-bold" style={{ fontSize: '10px' }}>LEVEL {level}</span>
+            <div className="jomao-progress" style={{ width: '100px', height: '6px', overflow: 'hidden' }}>
+              <motion.div 
+                key={`${level}-${profile?.xp}`}
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                transition={{ duration: 1.5, ease: "circOut" }}
+                className="jomao-progress-bar xp-progress h-100" 
+              />
+            </div>
+          </div>
+        </div>
+        {profile?.streak > 0 && (
+          <div className="streak-badge">
+            <Flame size={14} fill="currentColor" />
+            {profile.streak}
+          </div>
+        )}
       </div>
 
       {/* Main Savings Card */}
@@ -140,7 +162,15 @@ const Dashboard = () => {
               <Award size={20} />
             </div>
             <h6 className="text-muted small mb-1">সেভিংস স্ট্রিক</h6>
-            <h5 className="fw-bold mb-0">{profile?.streak || 0} দিন</h5>
+            <div className="d-flex align-items-center gap-2">
+              <h5 className="fw-bold mb-0">{profile?.streak || 0} দিন</h5>
+              {profile?.streak > 0 && <Flame size={18} className="text-danger" fill="#FF5A5F" />}
+            </div>
+            {profile?.streak_freeze_count > 0 && (
+              <p className="text-info mb-0" style={{ fontSize: '9px', fontWeight: 'bold' }}>
+                ❄️ {profile.streak_freeze_count} Freeze Active
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -195,7 +225,7 @@ const Dashboard = () => {
       {/* Daily Motivation Card */}
       <div className="glass-card border-0 p-3" style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)', color: 'white' }}>
         <h6 className="fw-bold mb-1">আজকের টিপস 💡</h6>
-        <p className="small mb-0 opacity-90">"ছোট ছোট জমানো টাকাই একদিন খুব দরকার হবে।" নিয়মিত ডায়েরিতে খরচের হিসাব রাখুন।</p>
+        <p className="small mb-0 opacity-90">লেভেল ৫ এ পৌঁছালে নতুন অ্যাপ থিম আনলক হবে! নিয়মিত সঞ্চয় করুন আর লেভেল আপ করুন।</p>
       </div>
     </motion.div>
   );

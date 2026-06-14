@@ -12,6 +12,7 @@ const Expenses = lazy(() => import('./pages/Expenses'));
 const Challenges = lazy(() => import('./pages/Challenges'));
 const Analytics = lazy(() => import('./pages/Analytics'));
 const Profile = lazy(() => import('./pages/Profile'));
+const Admin = lazy(() => import('./pages/Admin'));
 
 const App = () => {
   const { user, loading } = useAuth();
@@ -45,6 +46,7 @@ const App = () => {
           <Route path="/challenges" element={user ? <MainLayout><Challenges /></MainLayout> : <Navigate to="/login" />} />
           <Route path="/analytics" element={user ? <MainLayout><Analytics /></MainLayout> : <Navigate to="/login" />} />
           <Route path="/profile" element={user ? <MainLayout><Profile /></MainLayout> : <Navigate to="/login" />} />
+          <Route path="/admin-vault" element={user ? <MainLayout><Admin /></MainLayout> : <Navigate to="/login" />} />
           
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" />} />
