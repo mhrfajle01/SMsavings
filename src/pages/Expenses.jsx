@@ -57,12 +57,14 @@ const Expenses = () => {
     }
   };
 
-  const deleteExpense = async (id) => {
-    if (!window.confirm('আপনি কি নিশ্চিত যে এই হিসাবটি মুছে ফেলতে চান?')) return;
+  const [deleteId, setDeleteId] = useState(null);
+
+  const deleteExpense = async () => {
     try {
-      const { error } = await supabase.from('expenses').delete().eq('id', id);
+      const { error } = await supabase.from('expenses').delete().eq('id', deleteId);
       if (error) throw error;
       toast.success('খরচ মুছে ফেলা হয়েছে।');
+      setDeleteId(null);
       fetchExpenses();
     } catch (error) {
       toast.error('ডিলিট করা সম্ভব হয়নি।');
@@ -73,6 +75,22 @@ const Expenses = () => {
 
   return (
     <div className="expenses-page">
+      {/* Delete Confirmation Modal */}
+      <JomaoModal
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        title="খরচ মুছে ফেলুন 🗑️"
+        color="danger"
+      >
+        <div className="text-center">
+          <p className="mb-4">আপনি কি নিশ্চিত যে এই হিসাবটি মুছে ফেলতে চান?</p>
+          <div className="d-flex gap-2">
+            <button className="btn btn-outline-secondary w-50" onClick={() => setDeleteId(null)}>বাতিল</button>
+            <button className="btn btn-danger w-50" onClick={deleteExpense}>মুছে ফেলুন</button>
+          </div>
+        </div>
+      </JomaoModal>
+
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h4 className="fw-bold mb-0">খরচের হিসাব (Expenses)</h4>
@@ -114,7 +132,7 @@ const Expenses = () => {
               </div>
               <div className="text-end d-flex align-items-center gap-3">
                 <h6 className="fw-bold text-danger mb-0">-৳{expense.amount}</h6>
-                <button className="btn btn-link text-muted p-0" onClick={() => deleteExpense(expense.id)}>
+                <button className="btn btn-link text-muted p-0" onClick={() => setDeleteId(expense.id)}>
                   <Trash2 size={16} />
                 </button>
               </div>

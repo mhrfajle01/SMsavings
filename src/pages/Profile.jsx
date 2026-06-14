@@ -29,10 +29,42 @@ const Profile = () => {
   };
   
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
   const [editData, setEditData] = useState({
     full_name: profile?.full_name || '',
     monthly_income: profile?.monthly_income || 0
   });
+
+  const handleFactoryReset = async () => {
+    setLoading(true);
+    setShowResetModal(false);
+    try {
+      // Delete user data
+      await supabase.from('goals').delete().eq('user_id', user.id);
+      await supabase.from('expenses').delete().eq('user_id', user.id);
+      await supabase.from('savings_logs').delete().eq('user_id', user.id);
+      await supabase.from('user_challenges').delete().eq('user_id', user.id);
+      
+      // Reset profile
+      await supabase.from('profiles').update({
+        xp: 0,
+        level: 1,
+        streak: 0,
+        streak_freeze_count: 0,
+        last_streak_date: null
+      }).eq('id', user.id);
+      
+      toast.success('ফ্যাক্টরি রিসেট সম্পন্ন হয়েছে! 🎉');
+      
+      // Force logout and redirect to clean the state
+      await signOut();
+      navigate('/login');
+    } catch (error) {
+      toast.error('রিসেট করতে ব্যর্থ হয়েছে।');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
@@ -211,38 +243,25 @@ const Profile = () => {
           icon={<Trash2 size={20} className="text-danger" />} 
           title="ফ্যাক্টরি রিসেট" 
           subtitle="সব ডেটা মুছে নতুন করে শুরু করুন" 
-          onClick={async () => {
-            if (!window.confirm('সতর্কতা: আপনার সমস্ত সঞ্চয়, খরচ এবং লক্ষ্য মুছে ফেলা হবে। আপনি কি নিশ্চিত?')) return;
-            setLoading(true);
-            try {
-              // Delete user data
-              await supabase.from('goals').delete().eq('user_id', user.id);
-              await supabase.from('expenses').delete().eq('user_id', user.id);
-              await supabase.from('savings_logs').delete().eq('user_id', user.id);
-              await supabase.from('user_challenges').delete().eq('user_id', user.id);
-              
-              // Reset profile
-              await supabase.from('profiles').update({
-                xp: 0,
-                level: 1,
-                streak: 0,
-                streak_freeze_count: 0,
-                last_streak_date: null
-              }).eq('id', user.id);
-              
-              toast.success('ফ্যাক্টরি রিসেট সম্পন্ন হয়েছে! 🎉');
-              
-              // Force logout and redirect to clean the state
-              await signOut();
-              navigate('/login');
-            } catch (error) {
-              toast.error('রিসেট করতে ব্যর্থ হয়েছে।');
-            } finally {
-              setLoading(false);
-            }
-          }}
+          onClick={() => setShowResetModal(true)}
         />
       </div>
+
+      {/* Reset Confirmation Modal */}
+      <JomaoModal
+        isOpen={showResetModal}
+        onClose={() => setShowResetModal(false)}
+        title="ফ্যাক্টরি রিসেট ⚠️"
+        color="danger"
+      >
+        <div className="text-center">
+          <p className="mb-4">সতর্কতা: আপনার সমস্ত সঞ্চয়, খরচ এবং লক্ষ্য মুছে ফেলা হবে। আপনি কি নিশ্চিত?</p>
+          <div className="d-flex gap-2">
+            <button className="btn btn-outline-secondary w-50" onClick={() => setShowResetModal(false)}>বাতিল</button>
+            <button className="btn btn-danger w-50" onClick={handleFactoryReset}>নিশ্চিত করুন</button>
+          </div>
+        </div>
+      </JomaoModal>
 
       <button 
         className="btn btn-outline-danger w-100 py-3 rounded-4 d-flex align-items-center justify-content-center gap-2 fw-bold shadow-sm"

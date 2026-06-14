@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   streak INTEGER DEFAULT 0,
   last_streak_date DATE,
   streak_freeze_count INTEGER DEFAULT 0,
+  last_streak_action_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

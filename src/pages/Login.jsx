@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'framer-motion';
-import { LogIn, Mail, Lock, Loader2 } from 'lucide-react';
+import { LogIn, Mail, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPwd, setShowPwd] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
 
@@ -60,21 +61,32 @@ const Login = () => {
             </div>
           </div>
 
-          <div className="mb-4">
+          <div className="mb-4 position-relative">
             <label className="form-label small fw-semibold">পাসওয়ার্ড (Password)</label>
             <div className="input-group">
               <span className="input-group-text bg-transparent border-end-0 text-muted">
                 <Lock size={18} />
               </span>
               <input 
-                type="password" 
+                type={showPwd ? "text" : "password"} 
                 className="form-control border-start-0 ps-0" 
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required 
+                style={{ paddingRight: '45px' }}
               />
             </div>
+            {password.length > 0 && (
+              <button 
+                type="button"
+                className="btn position-absolute end-0 top-50 translate-middle-y text-muted border-0 shadow-none me-2"
+                onClick={() => setShowPwd(!showPwd)}
+                style={{ zIndex: 10, width: '40px', marginTop: '12px' }}
+              >
+                {showPwd ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            )}
           </div>
 
           <button 

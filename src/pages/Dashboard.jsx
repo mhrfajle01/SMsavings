@@ -6,6 +6,7 @@ import { supabase } from '../services/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { calculateLevel } from '../utils/gamification';
+import TutorialModal from '../components/TutorialModal';
 
 const Dashboard = () => {
   const { user, profile } = useAuth();
@@ -13,9 +14,16 @@ const Dashboard = () => {
   const [totalSaved, setTotalSaved] = useState(0);
   const [monthlyExpense, setMonthlyExpense] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [showTutorial, setShowTutorial] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
+    // Check if new user
+    const hasSeenTutorial = localStorage.getItem('hasSeenTutorial');
+    if (!hasSeenTutorial) {
+      setShowTutorial(true);
+      localStorage.setItem('hasSeenTutorial', 'true');
+    }
   }, [user]);
 
   const fetchDashboardData = async () => {
@@ -258,6 +266,8 @@ const Dashboard = () => {
         <h6 className="fw-bold mb-1">আজকের টিপস 💡</h6>
         <p className="small mb-0 opacity-90">লেভেল ৫ এ পৌঁছালে নতুন অ্যাপ থিম আনলক হবে! নিয়মিত সঞ্চয় করুন আর লেভেল আপ করুন।</p>
       </div>
+
+      <TutorialModal isOpen={showTutorial} onClose={() => setShowTutorial(false)} />
     </motion.div>
   );
 };

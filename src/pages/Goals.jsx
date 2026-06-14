@@ -105,12 +105,14 @@ const Goals = () => {
     }
   };
 
-  const deleteGoal = async (id) => {
-    if (!window.confirm('আপনি কি নিশ্চিত যে এই লক্ষ্যটি ডিলিট করতে চান?')) return;
+  const [deleteId, setDeleteId] = useState(null);
+
+  const deleteGoal = async () => {
     try {
-      const { error } = await supabase.from('goals').delete().eq('id', id);
+      const { error } = await supabase.from('goals').delete().eq('id', deleteId);
       if (error) throw error;
       toast.success('লক্ষ্যটি মুছে ফেলা হয়েছে।');
+      setDeleteId(null);
       fetchGoals();
     } catch (error) {
       toast.error('ডিলিট করা সম্ভব হয়নি।');
@@ -119,6 +121,22 @@ const Goals = () => {
 
   return (
     <div className="goals-page">
+      {/* Delete Confirmation Modal */}
+      <JomaoModal
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        title="লক্ষ্য মুছে ফেলুন 🗑️"
+        color="danger"
+      >
+        <div className="text-center">
+          <p className="mb-4">আপনি কি নিশ্চিত যে এই লক্ষ্যটি ডিলিট করতে চান?</p>
+          <div className="d-flex gap-2">
+            <button className="btn btn-outline-secondary w-50" onClick={() => setDeleteId(null)}>বাতিল</button>
+            <button className="btn btn-danger w-50" onClick={deleteGoal}>ডিলিট করুন</button>
+          </div>
+        </div>
+      </JomaoModal>
+
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h4 className="fw-bold mb-0">আমার লক্ষ্যসমূহ (Goals)</h4>
@@ -159,7 +177,7 @@ const Goals = () => {
                       <MoreVertical size={20} />
                     </button>
                     <ul className="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3">
-                      <li><button className="dropdown-item small d-flex align-items-center gap-2" onClick={() => deleteGoal(goal.id)}><Trash2 size={16} className="text-danger" /> ডিলিট করুন</button></li>
+                      <li><button className="dropdown-item small d-flex align-items-center gap-2" onClick={() => setDeleteId(goal.id)}><Trash2 size={16} className="text-danger" /> ডিলিট করুন</button></li>
                     </ul>
                   </div>
                 </div>

@@ -170,6 +170,8 @@ const AdminVault = () => {
     toast.success('CSV Exported! 📥');
   };
 
+  const [deleteTarget, setDeleteTarget] = useState({ table: null, id: null });
+
   const updateEntry = async (table, id, updates) => {
     try {
       const { error } = await supabase
@@ -186,8 +188,8 @@ const AdminVault = () => {
     }
   };
 
-  const deleteEntry = async (table, id) => {
-    if (!window.confirm('Are you sure you want to delete this record?')) return;
+  const deleteEntry = async () => {
+    const { table, id } = deleteTarget;
     try {
       const { error } = await supabase
         .from(table)
@@ -196,6 +198,7 @@ const AdminVault = () => {
       
       if (error) throw error;
       toast.success('Record Deleted 🗑️');
+      setDeleteTarget({ table: null, id: null });
       fetchTableData(table);
     } catch (error) {
       toast.error('Delete Failed');
@@ -579,7 +582,7 @@ const AdminVault = () => {
                             <Save size={16} />
                           </button>
                           
-                          <button className="btn btn-sm btn-outline-danger p-1 rounded-2" title="Delete User" onClick={() => deleteEntry('profiles', item.id)}>
+                          <button className="btn btn-sm btn-outline-danger p-1 rounded-2" title="Delete User" onClick={() => setDeleteTarget({ table: 'profiles', id: item.id })}>
                             <Trash2 size={16} />
                           </button>
                         </div>
@@ -621,7 +624,7 @@ const AdminVault = () => {
                           >
                             <Save size={16} />
                           </button>
-                          <button className="btn btn-sm btn-outline-danger p-1 rounded-2" onClick={() => deleteEntry('goals', item.id)}>
+                          <button className="btn btn-sm btn-outline-danger p-1 rounded-2" onClick={() => setDeleteTarget({ table: 'goals', id: item.id })}>
                             <Trash2 size={16} />
                           </button>
                         </div>
@@ -667,7 +670,7 @@ const AdminVault = () => {
                           >
                             <Save size={16} />
                           </button>
-                          <button className="btn btn-sm btn-outline-danger p-1 rounded-2" onClick={() => deleteEntry('expenses', item.id)}>
+                          <button className="btn btn-sm btn-outline-danger p-1 rounded-2" onClick={() => setDeleteTarget({ table: 'expenses', id: item.id })}>
                             <Trash2 size={16} />
                           </button>
                         </div>
@@ -687,6 +690,21 @@ const AdminVault = () => {
            DATA NODE: {window.location.hostname} • SSL: AES-256
          </p>
       </div>
+      {/* DELETE CONFIRMATION MODAL */}
+      <JomaoModal 
+        isOpen={!!deleteTarget.id} 
+        onClose={() => setDeleteTarget({ table: null, id: null })} 
+        title="Delete Record 🗑️"
+        color="danger"
+      >
+        <div className="text-center">
+          <p className="mb-4">Are you sure you want to delete this record? This action cannot be undone.</p>
+          <div className="d-flex gap-2">
+            <button className="btn btn-outline-secondary w-50" onClick={() => setDeleteTarget({ table: null, id: null })}>Cancel</button>
+            <button className="btn btn-danger w-50" onClick={deleteEntry}>Delete</button>
+          </div>
+        </div>
+      </JomaoModal>
     </motion.div>
   );
 };

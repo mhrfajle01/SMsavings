@@ -225,13 +225,13 @@ const Challenges = () => {
           Level {level}
         </motion.h3>
         <p className="small opacity-90 mb-3">{profile?.xp || 0} XP অর্জিত হয়েছে</p>
-        <div className="progress bg-white bg-opacity-20 shadow-sm" style={{ height: '14px', borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.3)' }}>
+          <div className="progress bg-white bg-opacity-20 shadow-sm" style={{ height: '14px', borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.3)' }}>
           <motion.div 
-            key={`${level}-${profile?.xp}`}
+            key={progress}
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 1.5, ease: "circOut" }}
-            className="progress-bar bg-white shadow-sm h-100" 
+            className="jomao-progress-bar xp-progress h-100" 
             style={{ minWidth: '2px' }}
           />
         </div>

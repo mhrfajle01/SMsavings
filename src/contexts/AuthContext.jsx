@@ -47,41 +47,6 @@ export const AuthProvider = ({ children }) => {
         .single();
 
       if (error) throw error;
-      
-      // Auto-check streak for BREAKS only (doesn't increment automatically)
-      const streakResult = checkStreakStatus(
-        data.last_streak_date, 
-        data.streak, 
-        data.streak_freeze_count > 0
-      );
-
-      // Only update if it's broken or needs a freeze (prevents automatic increments on load)
-      if (streakResult.status === 'broken' || streakResult.status === 'frozen') {
-        const updates = {
-          streak: streakResult.newStreak,
-          last_streak_date: streakResult.status === 'frozen' 
-            ? new Date().toISOString().split('T')[0] // Maintain streak by updating date
-            : data.last_streak_date // Keep old date if broken (resetting to 0)
-        };
-
-        if (streakResult.useFreeze) {
-          updates.streak_freeze_count = data.streak_freeze_count - 1;
-          toast.success('Streak Freeze used! ❄️');
-        }
-
-        const { data: updatedProfile, error: updateError } = await supabase
-          .from('profiles')
-          .update(updates)
-          .eq('id', userId)
-          .select()
-          .single();
-        
-        if (!updateError) {
-          setProfile(updatedProfile);
-          return updatedProfile;
-        }
-      }
-      
       setProfile(data);
       return data;
     } catch (error) {
@@ -92,64 +57,87 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const processDailyStreak = async (currentProfile) => {
+    const now = new Date();
+    const lastAction = currentProfile.last_streak_action_at ? new Date(currentProfile.last_streak_action_at) : null;
+    const todayStr = now.toISOString().split('T')[0];
+
+    // 1. Check if already acted today
+    if (lastAction && lastAction.toISOString().split('T')[0] === todayStr) {
+      return currentProfile.streak; // Already acted today
+    }
+
+    // 2. Check streak status for breaks
+    const streakResult = checkStreakStatus(
+      currentProfile.last_streak_date, 
+      currentProfile.streak, 
+      currentProfile.streak_freeze_count > 0
+    );
+
+    let newStreak = currentProfile.streak;
+    let freezeUsed = false;
+
+    if (streakResult.status === 'eligible') {
+      newStreak = currentProfile.streak + 1;
+      toast.success(`Streak Continued: ${newStreak} Days! 🔥`);
+    } else if (streakResult.status === 'none') {
+      newStreak = 1;
+      toast.success('Streak Started! 🔥');
+    } else if (streakResult.status === 'broken') {
+      newStreak = 1;
+      toast.error('Streak Reset! ❌');
+    } else if (streakResult.status === 'frozen') {
+      newStreak = currentProfile.streak;
+      freezeUsed = true;
+      toast.success('Streak Freeze used! ❄️');
+    }
+
+    // 3. Update DB
+    const updates = { 
+      streak: newStreak,
+      last_streak_date: todayStr,
+      last_streak_action_at: now.toISOString()
+    };
+    if (freezeUsed) updates.streak_freeze_count = currentProfile.streak_freeze_count - 1;
+
+    await supabase.from('profiles').update(updates).eq('id', currentProfile.id);
+    return newStreak;
+  };
+
   const addXP = async (amount) => {
     if (!user || !profile) return false;
     
     try {
-      // 1. Calculate XP and Level
+      // 1. Update XP and Level
       const currentXP = Number(profile.xp) || 0;
       const currentLevel = Number(profile.level) || 1;
       const newXP = currentXP + amount;
       const { level: newLevel } = calculateLevel(newXP);
       
-      // 2. Logical Streak Increment
-      // Check if we should increment streak (once per day when an action is performed)
-      const streakStatus = checkStreakStatus(
-        profile.last_streak_date, 
-        profile.streak, 
-        false // Freeze already handled in fetchProfile
-      );
-
-      let newStreak = profile.streak;
-      let newStreakDate = profile.last_streak_date;
-
-      if (streakStatus.status === 'eligible') {
-        // Yesterday was last update, increment today
-        newStreak = profile.streak + 1;
-        newStreakDate = new Date().toISOString().split('T')[0];
-        toast.success(`Streak Continued: ${newStreak} Days! 🔥`);
-      } else if (!profile.last_streak_date || profile.streak === 0) {
-        // First time or starting fresh after break
-        newStreak = 1;
-        newStreakDate = new Date().toISOString().split('T')[0];
-        toast.success('Streak Started! 🔥');
-      }
+      // 2. Process Streak Logically
+      await processDailyStreak(profile);
 
       const updates = { 
         id: user.id,
         xp: newXP,
         level: newLevel,
-        streak: newStreak,
-        last_streak_date: newStreakDate,
         updated_at: new Date().toISOString()
       };
 
       const { data: updatedProfile, error: updateError } = await supabase
         .from('profiles')
-        .upsert(updates)
+        .update(updates)
+        .eq('id', user.id)
         .select()
         .single();
       
       if (updateError) throw updateError;
       
-      if (updatedProfile) {
-        setProfile(updatedProfile);
-        if (newLevel > currentLevel) {
-          toast.success(`Level Up! You are now Level ${newLevel} 🎊`, { duration: 5000 });
-        }
-        return true;
+      setProfile(updatedProfile);
+      if (newLevel > currentLevel) {
+        toast.success(`Level Up! You are now Level ${newLevel} 🎊`, { duration: 5000 });
       }
-      return false;
+      return true;
     } catch (error) {
       console.error('Gamification Error:', error);
       toast.error('অগ্রগতি সেভ করা সম্ভব হয়নি।');
